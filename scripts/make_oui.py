@@ -4,7 +4,7 @@
 Run by CI before building. Tries the IEEE registry first, then Wireshark's copy.
 Exits non-zero if nothing could be downloaded; the app still works, just without vendor names.
 """
-import csv, io, sys, urllib.request
+import csv, io, os, sys, urllib.request
 
 SOURCES = [
     ("ieee", "https://standards-oui.ieee.org/oui/oui.csv"),
@@ -49,6 +49,7 @@ def main(dest):
         except Exception as e:  # try the next source
             print(f"{url}: {e}", file=sys.stderr)
             continue
+        os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
         with open(dest, "w", encoding="utf-8") as f:
             for k in sorted(table):
                 f.write(f"{k}\t{' '.join(table[k].split())}\n")
