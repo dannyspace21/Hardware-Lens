@@ -58,6 +58,11 @@ fun SettingsScreen(onBack: () -> Unit) {
                 SwitchRow("Check for updates when the app opens", "Looks at the GitHub release page (nothing about you is sent)", Prefs.checkUpdates.value) {
                     Prefs.setCheckUpdates(it)
                 }
+                SwitchRow(
+                    "Install updates automatically on Wi-Fi",
+                    "Starts the download as soon as a new version is found. On mobile data it asks first.",
+                    Prefs.autoUpdate.value
+                ) { Prefs.setAutoUpdate(it) }
             }
 
             HorizontalDivider()

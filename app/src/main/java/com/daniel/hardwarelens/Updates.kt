@@ -10,7 +10,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class UpdateInfo(val versionCode: Int, val versionName: String, val apkUrl: String)
+data class UpdateInfo(val versionCode: Int, val versionName: String, val apkUrl: String, val notes: String = "")
 
 /**
  * Checks GitHub for a newer build. Every CI build publishes version.json next to the APK
@@ -39,6 +39,7 @@ object Updates {
                     versionCode = j.getInt("versionCode"),
                     versionName = j.optString("versionName", "?"),
                     apkUrl = j.optString("apkUrl", apkUrl),
+                    notes = j.optString("notes", ""),
                 )
             } finally {
                 conn.disconnect()

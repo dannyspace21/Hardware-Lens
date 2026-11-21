@@ -25,6 +25,7 @@ fun AboutScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<String?>(null) }
+    var showUpdate by remember { mutableStateOf(false) }
     val update = Updates.available.value
 
     Scaffold(
@@ -63,8 +64,9 @@ fun AboutScreen(onBack: () -> Unit) {
                         Text("Updates", style = MaterialTheme.typography.titleMedium)
                         if (update != null) {
                             Text("Version ${update.versionName} is available.")
-                            Button(onClick = { Updates.download(ctx, update) }) { Text("Download update") }
-                            HintText("Open the downloaded file and tap Update. No need to uninstall — your settings and NFC history are kept.")
+                            Button(onClick = { showUpdate = true }) { Text(if (Updater.busy) "Show progress" else "Update now") }
+                            HintText("Downloads and installs inside the app. No need to uninstall — your settings and NFC history are kept.")
+                            if (showUpdate) UpdateDialog(update) { showUpdate = false }
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 OutlinedButton(

@@ -49,8 +49,21 @@ jobs:
       - name: Prepare download files
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk HardwareLens.apk
-          printf '{"versionCode": %s, "versionName": "0.1.%s", "commit": "%s", "apkUrl": "https://github.com/%s/releases/download/latest/HardwareLens.apk"}\n' \
-            "${{ github.run_number }}" "${{ github.run_number }}" "${{ github.sha }}" "${{ github.repository }}" > version.json
+          python3 - <<'PY'
+          import json, os, subprocess
+          n = int(os.environ["GITHUB_RUN_NUMBER"])
+          msg = subprocess.run(["git", "log", "-1", "--format=%B"], capture_output=True, text=True).stdout
+          lines = [l for l in msg.splitlines() if not l.startswith(("Co-Authored-By:", "Claude-Session:"))]
+          notes = "\n".join(lines).strip()[:1500]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          json.dump({
+              "versionCode": n,
+              "versionName": f"0.1.{n}",
+              "commit": os.environ["GITHUB_SHA"],
+              "notes": notes,
+              "apkUrl": f"https://github.com/{repo}/releases/download/latest/HardwareLens.apk",
+          }, open("version.json", "w"), indent=1)
+          PY
           cat version.json
 
       - name: Upload APK (workflow artifact)

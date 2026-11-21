@@ -72,11 +72,18 @@ fun HardwareLensApp() {
         val permissionLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { }
+        val startUpdate = rememberUpdateStarter()
         LaunchedEffect(Unit) {
             val missing = requiredPermissions().filterNot { ctx.hasPerm(it) }
             if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
             OuiDb.load(ctx)
-            if (BuildConfig.UPDATE_CHECK && Prefs.checkUpdates.value) Updates.check()
+            if (BuildConfig.UPDATE_CHECK && Prefs.checkUpdates.value) {
+                val found = Updates.check().getOrNull()?.takeIf { it.versionCode > BuildConfig.VERSION_CODE }
+                // On Wi-Fi with install permission already granted, just get on with it.
+                if (found != null && Prefs.autoUpdate.value && Updater.onUnmeteredNetwork(ctx) && Updater.canInstall(ctx)) {
+                    startUpdate(found)
+                }
+            }
         }
 
         // Jump to the NFC tab whenever something is tapped against the phone.
@@ -86,21 +93,8 @@ fun HardwareLensApp() {
         }
 
         val update = Updates.available.value
-        if (update != null && !updateDismissed) {
-            AlertDialog(
-                onDismissRequest = { updateDismissed = true },
-                title = { Text("Update available") },
-                text = {
-                    Text(
-                        "Version ${update.versionName} is ready (you have ${BuildConfig.VERSION_NAME}). " +
-                            "Download it, open the file, and tap Update — your settings are kept."
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = { updateDismissed = true; Updates.download(ctx, update) }) { Text("Download") }
-                },
-                dismissButton = { TextButton(onClick = { updateDismissed = true }) { Text("Later") } },
-            )
+        if (update != null && !updateDismissed && page == null) {
+            UpdateDialog(update) { updateDismissed = true }
         }
 
         BackHandler(enabled = page != null) { page = null }

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only in GitHub (sideloaded) builds: lets the app download and install its own updates.
+     Play Store builds don't get this — Google Play updates those itself. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- Receives the result of an install session (needs confirmation / done / failed). -->
+        <receiver
+            android:name="com.daniel.hardwarelens.UpdateInstallReceiver"
+            android:exported="false" />
+
+        <!-- After an update finishes, posts "Updated — tap to open". -->
+        <receiver
+            android:name="com.daniel.hardwarelens.UpdatedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

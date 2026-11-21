@@ -15,6 +15,7 @@ object Prefs {
     val wifiScanSeconds = mutableIntStateOf(30)
     val checkUpdates = mutableStateOf(true)
     val keepScreenOn = mutableStateOf(false)
+    val autoUpdate = mutableStateOf(true)
 
     fun init(ctx: Context) {
         if (sp != null) return
@@ -26,6 +27,7 @@ object Prefs {
         wifiScanSeconds.intValue = p.getInt("wifiScanSeconds", 30)
         checkUpdates.value = p.getBoolean("checkUpdates", true)
         keepScreenOn.value = p.getBoolean("keepScreenOn", false)
+        autoUpdate.value = p.getBoolean("autoUpdate", true)
     }
 
     fun setTheme(v: ThemeMode) { theme.value = v; sp?.edit()?.putString("theme", v.name)?.apply() }
@@ -33,5 +35,6 @@ object Prefs {
     fun setDynamicColor(v: Boolean) { dynamicColor.value = v; sp?.edit()?.putBoolean("dynamicColor", v)?.apply() }
     fun setWifiScanSeconds(v: Int) { wifiScanSeconds.intValue = v; sp?.edit()?.putInt("wifiScanSeconds", v)?.apply() }
     fun setCheckUpdates(v: Boolean) { checkUpdates.value = v; sp?.edit()?.putBoolean("checkUpdates", v)?.apply() }
+    fun setAutoUpdate(v: Boolean) { autoUpdate.value = v; sp?.edit()?.putBoolean("autoUpdate", v)?.apply() }
     fun setKeepScreenOn(v: Boolean) { keepScreenOn.value = v; sp?.edit()?.putBoolean("keepScreenOn", v)?.apply() }
 }

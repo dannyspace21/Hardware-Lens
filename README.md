@@ -32,9 +32,12 @@ When you tap a credit/debit card, Hardware Lens reads only the card's public **p
 2. Open `HardwareLens.apk` and allow "Install unknown apps" for your browser when asked.
 3. Open the app and **allow the permissions** it asks for. Turn on Location, Wi-Fi, Bluetooth and NFC.
 
-### Updates
-- The app checks GitHub when it opens and tells you when a newer version is out (you can turn this off in Settings, or check by hand in About).
-- Download the new APK and tap **Update**. **You never need to uninstall:** every build is signed with the same key and has a higher version number, so Android updates it in place and keeps your settings and NFC history.
+### Updates (built into the app)
+When a new build is on GitHub, the app says so when you open it. Tap **Update now** and it downloads and installs right there. No browser, no hunting for the file, no uninstalling; your settings and NFC history are kept.
+- **First time only:** Android asks you to allow Hardware Lens to "install unknown apps" (one switch), and shows its own **Update** confirmation.
+- **After that (Android 12+):** updates can install without that extra tap. A notification says "Hardware Lens updated — tap to open".
+- **On Wi-Fi** the update starts by itself as soon as it's found. On mobile data it asks first. Change this in Settings → Updates.
+- The "What's new" text comes from the commit message of each build.
 
 Every push to the default branch rebuilds the app (Actions tab, ~5 minutes), runs the unit tests, and replaces the file behind the download link. Tagging a release like `v1.0.0` also attaches the APK to that release, plus a Play Store bundle if a release key is set up (see [docs/PLAY_STORE.md](docs/PLAY_STORE.md)).
 
