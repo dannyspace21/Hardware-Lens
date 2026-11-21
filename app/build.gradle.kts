@@ -12,8 +12,11 @@ android {
         applicationId = "com.daniel.hardwarelens"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // Every CI build gets a higher versionCode (the GitHub run number), so Android always
+        // treats a new download as an update. Local builds fall back to 1.
+        val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = buildNumber
+        versionName = "0.1.$buildNumber"
     }
 
     // A fixed debug key (committed on purpose — it is NOT a release key) so every
