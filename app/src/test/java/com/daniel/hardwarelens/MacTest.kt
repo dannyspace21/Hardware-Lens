@@ -41,7 +41,8 @@ class MacTest {
         assertEquals(0x20, q[12].toInt())
         assertEquals('C'.code, q[13].toInt())   // '*' = 0x2A -> "CK"
         assertEquals('K'.code, q[14].toInt())
-        assertEquals(0x21, q[48].toInt())        // NBSTAT
+        assertEquals(0x21, q[47].toInt())        // NBSTAT
+        assertEquals(1, q[49].toInt())           // class IN
     }
 
     @Test fun netbiosAnswerParses() {
