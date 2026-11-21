@@ -2,52 +2,55 @@
 
 An open-source Android app that shows you, live and visually, what your phone's hardware is picking up.
 
+**Download (always the newest build):**
+https://github.com/dannyspace21/Hardware-Lens/releases/download/latest/HardwareLens.apk
+
+## What's inside
+
 | Tab | What you see |
 |---|---|
-| **Sensors** | Live scrolling graphs for the accelerometer, gyroscope, compass, light, proximity and barometer, plus a list of every sensor in the phone. |
-| **Wi-Fi** | Every nearby Wi-Fi network with signal strength, channel, band and security, plus a "channel map" showing which networks overlap. |
-| **Bluetooth** | A live radar of nearby Bluetooth devices (headphones, watches, phones, trackers) with maker and rough distance. |
-| **Devices** | Finds things on *your* Wi-Fi network: PS4/PS5 (including whether it's on or in rest mode), Xbox, smart TVs, Chromecasts, Sonos, printers, routers, Hue bridges. |
-| **NFC** | Tap any card, key fob, transit pass or NFC sticker to see the chip type, ID, technologies, decoded data tree and raw bytes. |
+| **Sensors** | Sorted into **Motion** (accelerometer, linear acceleration, gravity, gyroscope), **Position** (orientation, magnetometer, proximity), **Environment** (light, barometer + altitude, temperature, humidity) and **Tools** (compass, bubble level, step counter). **All sensors** lists every sensor grouped by type with its specs. Any group can be **recorded to CSV** and shared. |
+| **Wireless → Wi-Fi** | Your own connection's signal over time, every nearby network with channel, width, security and Wi-Fi generation, and a channel map for 2.4, 5 and 6 GHz. |
+| **Wireless → Bluetooth** | A live radar of nearby devices, with the type recognized (AirTag, AirPods, Tile, SmartTag, iBeacon, fitness gear, keyboards…). Tap one for its signal graph and raw advertisement data. |
+| **Wireless → Cellular** | Your carrier, technology (2G–5G), signal strength over time, and every cell tower the phone can hear. |
+| **Devices** | Finds things on *your* Wi-Fi: PS4/PS5 (including on or in rest mode), Xbox, TVs, Chromecasts, Sonos, printers, routers, phones and PCs. Tap a device to check its open ports, ping it, or open its web page. |
+| **NFC** | Tap any card, key fob, transit pass or sticker to see the chip type, ID, decoded data and raw bytes. Your last 50 scans are kept in **History** and can be shared. |
+| **Phone → Battery** | Charge, charging current and watts, temperature graph, health, charge cycles and estimated capacity. |
+| **Phone → GPS** | A sky map of every satellite (GPS, Galileo, GLONASS, BeiDou…), signal strengths, your fix and accuracy. |
+| **Phone → Camera** | Every camera and lens: megapixels, sensor size, focal length (and full-frame equivalent), aperture, zoom, ISO and shutter range. |
+
+Also: **Settings** (theme, units, Wi-Fi scan interval, keep screen on) and **About** (version, privacy, update check).
 
 ### About payment cards
-When you tap a credit/debit card, Hardware Lens reads only the card's public **payment directory** — the same first step every tap-to-pay terminal performs. You'll see the network (Visa, Mastercard, Amex…), the payment app IDs and the decoded response. It intentionally does **not** request card numbers or transaction data. Modern cards also use a random chip ID that changes on every tap.
+When you tap a credit/debit card, Hardware Lens reads only the card's public **payment directory**, the same first step every tap-to-pay terminal performs. It intentionally does **not** request card numbers or transaction data.
 
 ---
 
 ## Get the app on your phone
 
-**Direct download (always the newest build):**
-https://github.com/dannyspace21/Hardware-Lens/releases/download/latest/HardwareLens.apk
+1. Open the download link above on your Android phone.
+2. Open `HardwareLens.apk` and allow "Install unknown apps" for your browser when asked.
+3. Open the app and **allow the permissions** it asks for. Turn on Location, Wi-Fi, Bluetooth and NFC.
 
-1. Open that link on your Android phone. It downloads `HardwareLens.apk`.
-2. Open the file and allow "Install unknown apps" for your browser when asked.
-3. Open the app and **allow all permissions** it asks for. Turn on Location, Wi-Fi, Bluetooth and NFC.
+### Updates
+- The app checks GitHub when it opens and tells you when a newer version is out (you can turn this off in Settings, or check by hand in About).
+- Download the new APK and tap **Update**. **You never need to uninstall:** every build is signed with the same key and has a higher version number, so Android updates it in place and keeps your settings and NFC history.
 
-Every push to GitHub rebuilds the app automatically (Actions tab, ~5 minutes) and replaces the
-file behind that link. Builds are signed with the same key each time, so installing a newer one
-updates the app in place instead of complaining.
-
-**Versioned releases:** Releases → Draft a new release → new tag like `v0.1.0` → Publish.
-The workflow attaches `HardwareLens.apk` to that release.
-
-If a build fails (red X in the Actions tab), open the failed run and copy the error near the bottom of the log.
+Every push to the default branch rebuilds the app (Actions tab, ~5 minutes), runs the unit tests, and replaces the file behind the download link. Tagging a release like `v1.0.0` also attaches the APK to that release, plus a Play Store bundle if a release key is set up (see [docs/PLAY_STORE.md](docs/PLAY_STORE.md)).
 
 > `app/debug.keystore` is a throwaway *debug* key, committed on purpose so CI builds stay
-> update-compatible. It is not suitable for the Play Store — use a separate release key kept in
-> GitHub Secrets for that.
+> update-compatible. It is not used for Play Store releases.
 
 ---
 
 ## Things to know
-- **Wi-Fi scanning** requires Location to be on — that's an Android rule, not this app. Android also limits apps to about 4 Wi-Fi scans every 2 minutes.
-- **Devices tab** only sees devices on the *same* Wi-Fi network as your phone, and only ones that announce themselves. A PS4/PS5 in rest mode will usually still answer.
-- **Bluetooth distance** is an estimate from signal strength; walls and bodies throw it off.
-- Many phones and watches randomize their Bluetooth address for privacy, so the same device may show up as "new" over time.
-- Nothing is sent anywhere. The app has no servers, no analytics and no ads.
+- **Wi-Fi, Bluetooth, cell and GPS** results need Location turned on. That's an Android rule. Android also limits apps to about 4 Wi-Fi scans every 2 minutes.
+- **Devices tab:** guest, school, dorm, hotel and office Wi-Fi usually block devices from seeing each other ("client isolation"). There you'll only see the router. The "How it searched" panel shows what each search method found. Android 10+ hides other devices' hardware (MAC) addresses from apps.
+- **Bluetooth distance** is an estimate from signal strength; walls and bodies throw it off. Many devices randomize their Bluetooth address, so the same device can show up as "new" over time.
+- **Privacy:** nothing is sent anywhere except the optional update check. See [PRIVACY.md](PRIVACY.md).
 
 ## Tech details
-Kotlin · Jetpack Compose · Material 3 · minSdk 26 (Android 8) · targetSdk 34. Built by GitHub Actions with the Gradle wrapper (8.9) and JDK 17. To work on it in Android Studio, just open the folder, or run `./gradlew assembleDebug`.
+Kotlin · Jetpack Compose · Material 3 · minSdk 26 (Android 8) · targetSdk 35. Built by GitHub Actions with the Gradle wrapper and JDK 17; unit tests and Android Lint run on every push. To work on it in Android Studio, open the folder, or run `./gradlew testDebugUnitTest assembleDebug`.
 
 ## License
 MIT

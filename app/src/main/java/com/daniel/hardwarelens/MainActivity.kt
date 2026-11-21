@@ -5,13 +5,17 @@ import android.nfc.Tag
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 
 class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
     private var nfcAdapter: NfcAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        Prefs.init(this)
+        NfcHistory.init(this)
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         setContent { HardwareLensApp() }
     }
@@ -33,6 +37,9 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
     override fun onTagDiscovered(tag: Tag) {
         val scan = NfcReader.read(tag)          // runs on a background thread
-        runOnUiThread { NfcState.lastScan.value = scan }
+        runOnUiThread {
+            NfcState.lastScan.value = scan
+            NfcHistory.add(scan)
+        }
     }
 }

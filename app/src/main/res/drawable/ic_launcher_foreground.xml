@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- lens ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:pathData="M33,51 a17,17 0 1,0 34,0 a17,17 0 1,0 -34,0" />
+    <!-- chip in the middle of the lens -->
+    <path
+        android:fillColor="#4DD0E1"
+        android:pathData="M43,45 h14 v12 h-14 z" />
+    <!-- handle -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M63,63 L74,74" />
+    <!-- radio waves -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4DD0E1"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M54.3,26.4 A25,25 0 0,1 74.6,46.7" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4DD0E1"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M55.2,21.5 A30,30 0 0,1 79.5,45.8" />
+</vector>

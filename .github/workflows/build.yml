@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   build:
+    name: Test & build APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,24 +28,41 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      - name: Unit tests
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace
 
-      - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk HardwareLens.apk
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: app/build/reports/tests/
+
+      - name: Prepare download files
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk HardwareLens.apk
+          printf '{"versionCode": %s, "versionName": "0.1.%s", "commit": "%s", "apkUrl": "https://github.com/%s/releases/download/latest/HardwareLens.apk"}\n' \
+            "${{ github.run_number }}" "${{ github.run_number }}" "${{ github.sha }}" "${{ github.repository }}" > version.json
+          cat version.json
 
       - name: Upload APK (workflow artifact)
         uses: actions/upload-artifact@v4
         with:
           name: HardwareLens-apk
-          path: HardwareLens.apk
+          path: |
+            HardwareLens.apk
+            version.json
 
-      # Always-current download link: Releases -> "Latest build"
+      # Always-current download link (only from the default branch):
       # https://github.com/<owner>/<repo>/releases/download/latest/HardwareLens.apk
+      # The app reads version.json from the same release to offer in-app updates.
       - name: Publish to the "latest" release
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
@@ -55,10 +73,72 @@ jobs:
           body: |
             Version 0.1.${{ github.run_number }} (versionCode ${{ github.run_number }}) — automatic build of `${{ github.ref_name }}` @ ${{ github.sha }}.
             Download **HardwareLens.apk** below, open it on your phone, and allow "Install unknown apps".
-          files: HardwareLens.apk
+            Already have Hardware Lens? Installing this updates it in place — no need to uninstall.
+          files: |
+            HardwareLens.apk
+            version.json
 
-      - name: Attach APK to a versioned release (when you push a tag like v0.1.0)
+      - name: Attach APK to a versioned release (when you push a tag like v1.0.0)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: HardwareLens.apk
+
+  lint:
+    name: Code checks (Android Lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Android Lint
+        run: |
+          chmod +x gradlew
+          ./gradlew lintDebug --no-daemon
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+
+  play-bundle:
+    name: Play Store bundle (tags only, needs release key)
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+    steps:
+      - name: Skip if no release key is configured
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice::No RELEASE_KEYSTORE_BASE64 secret — skipping the Play Store bundle. See docs/PLAY_STORE.md."
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+      - uses: actions/setup-java@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        if: env.HAS_KEY == 'true'
+      - name: Build signed release bundle (.aab)
+        if: env.HAS_KEY == 'true'
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          export RELEASE_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+          cp app/build/outputs/bundle/release/app-release.aab HardwareLens-play.aab
+      - name: Attach bundle to the release
+        if: env.HAS_KEY == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: HardwareLens-play.aab
