@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
@@ -15,6 +16,7 @@ import android.provider.Settings
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -147,7 +149,9 @@ object Updater {
     private const val CHANNEL = "updates"
 
     fun notifyUpdated(ctx: Context) {
-        if (Build.VERSION.SDK_INT >= 33 && !ctx.hasPerm(Manifest.permission.POST_NOTIFICATIONS)) return
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) return
         val nm = NotificationManagerCompat.from(ctx)
         if (Build.VERSION.SDK_INT >= 26) {
             ctx.getSystemService(NotificationManager::class.java)?.createNotificationChannel(
