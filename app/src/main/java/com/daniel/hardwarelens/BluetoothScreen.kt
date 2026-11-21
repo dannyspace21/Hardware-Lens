@@ -8,6 +8,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -46,13 +47,19 @@ data class BleDevice(
     val rawData: List<String>,
     val rssiHistory: List<Int>,
     val packets: Int,
+    /** "Public" (the maker's permanent address), "Random", or null when Android doesn't say (before Android 15). */
+    val addressType: String?,
 ) {
+    /** Maker from the address itself — only meaningful for public addresses. */
+    val addressVendor: String? get() = if (addressType == "Public") OuiDb.vendor(address) else null
     val title: String get() = name ?: kind?.label ?: maker?.let { "$it device" } ?: "Unknown device"
     /** Rough distance from signal strength; uses the advertised TX power when the device gives one. */
     val meters: Double get() = 10.0.pow(((txPower?.let { it - 41 } ?: -59) - rssi) / 20.0)
 }
 
+@SuppressLint("MissingPermission")
 private fun ScanResult.toDevice(prev: BleDevice?): BleDevice {
+    val addrType = if (Build.VERSION.SDK_INT >= 35) runCatching { device.addressType }.getOrNull() else null
     val rec = scanRecord
     val mfgSparse = rec?.manufacturerSpecificData
     val mfg = buildMap<Int, ByteArray> {
@@ -76,7 +83,8 @@ private fun ScanResult.toDevice(prev: BleDevice?): BleDevice {
         name = rec?.deviceName ?: prev?.name,
         rssi = rssi,
         lastSeen = System.currentTimeMillis(),
-        maker = mfg.keys.firstOrNull()?.let { BleDecode.companyName(it) },
+        maker = mfg.keys.firstOrNull()?.let { BleDecode.companyName(it) }
+            ?: if (addrType == 0) OuiDb.vendor(device.address) else null,
         kind = BleDecode.classify(advert) ?: prev?.kind,
         txPower = tx,
         connectable = isConnectable,
@@ -84,6 +92,7 @@ private fun ScanResult.toDevice(prev: BleDevice?): BleDevice {
         rawData = raw,
         rssiHistory = ((prev?.rssiHistory ?: emptyList()) + rssi).takeLast(60),
         packets = (prev?.packets ?: 0) + 1,
+        addressType = when (addrType) { 0 -> "Public"; 1 -> "Random"; else -> null },
     )
 }
 
@@ -245,7 +254,16 @@ private fun BleDetailDialog(d: BleDevice, onDismiss: () -> Unit) {
                     LineChart(listOf(d.rssiHistory.map { it.toFloat() }), height = 80.dp, minY = -100f, maxY = -30f, maxPoints = 60)
                 }
                 item { InfoRow("What it looks like", d.kind?.let { "${it.label} (${it.category})" } ?: "Not recognised") }
-                item { InfoRow("Address", d.address) }
+                item {
+                    InfoRow(
+                        "Hardware (MAC) address",
+                        d.address + "\n" + when (d.addressType) {
+                            "Public" -> "Permanent address" + (d.addressVendor?.let { " · made by $it" } ?: "")
+                            "Random" -> "Random address — the device changes it regularly for privacy"
+                            else -> "Android 15+ can tell whether this is the permanent or a random address"
+                        }
+                    )
+                }
                 item { InfoRow("Signal", "${d.rssi} dBm · ~${Fmt.distance(d.meters, Prefs.units.value)} away") }
                 d.txPower?.let { item { InfoRow("Advertised transmit power", "$it dBm") } }
                 item { InfoRow("Can connect", if (d.connectable) "Yes" else "No (broadcast only)") }

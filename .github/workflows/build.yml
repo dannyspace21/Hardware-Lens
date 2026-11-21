@@ -33,6 +33,9 @@ jobs:
           chmod +x gradlew
           ./gradlew testDebugUnitTest --no-daemon --stacktrace
 
+      - name: Fetch MAC vendor list
+        run: python3 scripts/make_oui.py app/src/main/assets/oui.txt || echo "::warning::Couldn't download the MAC vendor list; building without maker names"
+
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
@@ -124,6 +127,9 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         if: env.HAS_KEY == 'true'
+      - name: Fetch MAC vendor list
+        if: env.HAS_KEY == 'true'
+        run: python3 scripts/make_oui.py app/src/main/assets/oui.txt || echo "::warning::Couldn't download the MAC vendor list"
       - name: Build signed release bundle (.aab)
         if: env.HAS_KEY == 'true'
         env:

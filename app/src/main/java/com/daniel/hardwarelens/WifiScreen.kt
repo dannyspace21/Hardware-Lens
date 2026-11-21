@@ -198,6 +198,9 @@ private fun ConnectedCard(c: ConnectedWifi?, history: List<Float>) {
                 StatTile("Link speed", if (c.linkMbps > 0) "${c.linkMbps} Mbps" else "—", Modifier.weight(1f))
                 StatTile(WifiMath.band(c.freq).label, "ch ${WifiMath.channel(c.freq)}", Modifier.weight(1f))
             }
+            Mac.normalize(c.bssid)?.let { m ->
+                HintText("Access point MAC $m" + (OuiDb.describe(m)?.let { " · $it" } ?: ""))
+            }
             HintText("Signal over the last few minutes — walk around to find dead spots.")
             LineChart(listOf(history.toList()), height = 80.dp, minY = -95f, maxY = -25f)
         }
@@ -264,7 +267,11 @@ private fun WifiRow(n: WifiNet, connected: Boolean) {
                     "ch ${n.channel} · ${n.band.label} · ${n.widthMhz} MHz · ${n.security}" + (n.standard?.let { " · $it" } ?: ""),
                     style = MaterialTheme.typography.bodySmall
                 )
-                Text(n.bssid, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    n.bssid.uppercase() + (OuiDb.describe(n.bssid)?.let { " · $it" } ?: ""),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 LinearProgressIndicator(
                     progress = { WifiMath.fraction(n.rssi) },
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp)

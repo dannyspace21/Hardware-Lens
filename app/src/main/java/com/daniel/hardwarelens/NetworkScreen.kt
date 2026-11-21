@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -150,6 +151,13 @@ private fun DeviceRow(d: FoundDevice, onClick: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(d.name.ifBlank { d.kind }, style = MaterialTheme.typography.titleSmall)
                 Text(listOf(d.kind, d.ip).filter { it.isNotBlank() }.distinct().joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                d.mac?.let { m ->
+                    Text(
+                        "MAC $m" + (OuiDb.describe(m)?.let { " · $it" } ?: ""),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
                 d.details.firstOrNull()?.let { Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 2) }
                 Text("via ${d.sources.joinToString(", ")}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             }
@@ -175,6 +183,19 @@ private fun DeviceDialog(d: FoundDevice, onDismiss: () -> Unit) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 item { InfoRow("Looks like", d.kind) }
                 if (d.ip.isNotBlank()) item { InfoRow("IP address", d.ip) }
+                item {
+                    val m = d.mac
+                    InfoRow(
+                        "Hardware (MAC) address",
+                        if (m != null) {
+                            listOfNotNull(m, OuiDb.describe(m)?.let { "Maker: $it" }, d.macSource?.let { "Source: $it" }).joinToString("\n")
+                        } else if (d.isMe) {
+                            "Android hides this phone's own MAC from apps. On Wi-Fi it usually uses a private random one anyway (Settings → Wi-Fi → your network → Privacy)."
+                        } else {
+                            "Not shared by this device. Android 10+ blocks apps from reading other devices' MACs, so it only shows when a device announces it itself (Windows PCs, NAS boxes, AirPlay and Linux devices often do). Your router's app or admin page lists every MAC."
+                        }
+                    )
+                }
                 item { InfoRow("Found by", d.sources.joinToString(", ")) }
                 if (d.details.isNotEmpty()) item { InfoRow("Details", d.details.joinToString("\n")) }
                 if (d.ip.isNotBlank() && !d.isMe) {

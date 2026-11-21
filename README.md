@@ -19,7 +19,7 @@ https://github.com/dannyspace21/Hardware-Lens/releases/download/latest/HardwareL
 | **Phone → GPS** | A sky map of every satellite (GPS, Galileo, GLONASS, BeiDou…), signal strengths, your fix and accuracy. |
 | **Phone → Camera** | Every camera and lens: megapixels, sensor size, focal length (and full-frame equivalent), aperture, zoom, ISO and shutter range. |
 
-Also: **Settings** (theme, units, Wi-Fi scan interval, keep screen on) and **About** (version, privacy, update check).
+Also: a one-tap **light/dark** button in the top bar, **Settings** (theme, units, Wi-Fi scan interval, keep screen on) and **About** (version, privacy, update check).
 
 ### About payment cards
 When you tap a credit/debit card, Hardware Lens reads only the card's public **payment directory**, the same first step every tap-to-pay terminal performs. It intentionally does **not** request card numbers or transaction data.
@@ -45,6 +45,7 @@ Every push to the default branch rebuilds the app (Actions tab, ~5 minutes), run
 
 ## Things to know
 - **Wi-Fi, Bluetooth, cell and GPS** results need Location turned on. That's an Android rule. Android also limits apps to about 4 Wi-Fi scans every 2 minutes.
+- **MAC addresses:** since Android 10, apps can't read other devices' hardware (MAC) addresses, and no permission unlocks that without rooting. Hardware Lens shows a MAC whenever a device announces its own (Windows PCs and NAS boxes via NetBIOS, AirPlay speakers, Linux machines), plus the MAC of the Wi-Fi access point you're on, every Wi-Fi network's BSSID, and Bluetooth addresses. It names the maker using the IEEE vendor list, which is downloaded at build time. Private (randomized) addresses are labeled as such.
 - **Devices tab:** guest, school, dorm, hotel and office Wi-Fi usually block devices from seeing each other ("client isolation"). There you'll only see the router. The "How it searched" panel shows what each search method found. Android 10+ hides other devices' hardware (MAC) addresses from apps.
 - **Bluetooth distance** is an estimate from signal strength; walls and bodies throw it off. Many devices randomize their Bluetooth address, so the same device can show up as "new" over time.
 - **Privacy:** nothing is sent anywhere except the optional update check. See [PRIVACY.md](PRIVACY.md).

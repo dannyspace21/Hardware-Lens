@@ -105,7 +105,18 @@ object NetworkDiscovery {
         }
         status("network", "${link.transport}: your phone is ${link.ipStr}/${link.prefix}, router ${link.gateway ?: "unknown"}")
         emit(FoundDevice(link.ipStr, "This phone", "This phone", sources = setOf("You"), isMe = true))
-        link.gateway?.let { emit(FoundDevice(it, "Router", "Router", sources = setOf("Network settings"), isGateway = true)) }
+        link.gateway?.let { gw ->
+            // The access point we're connected to is usually the router itself (or a mesh node of it).
+            @Suppress("DEPRECATION")
+            val bssid = runCatching { app.getSystemService(WifiManager::class.java)?.connectionInfo?.bssid }.getOrNull()
+            val apMac = if (link.transport == "Wi-Fi") Mac.normalize(bssid) else null
+            emit(
+                FoundDevice(
+                    gw, "Router", "Router", sources = setOf("Network settings"), isGateway = true,
+                    mac = apMac, macSource = apMac?.let { "Wi-Fi access point you're connected to (BSSID)" },
+                )
+            )
+        }
 
         val lock = app.getSystemService(WifiManager::class.java)
             ?.createMulticastLock("hardwarelens")?.apply { setReferenceCounted(false); acquire() }
@@ -267,10 +278,27 @@ object NetworkDiscovery {
                 val ip = r?.let { hostOf(it) }.orEmpty()
                 val attrs = r?.attributes.orEmpty()
                 fun attr(k: String) = attrs[k]?.let { String(it, Charsets.UTF_8) }?.takeIf { it.isNotBlank() }
-                val name = attr("fn") ?: info.serviceName
+                val type = info.serviceType.orEmpty()
+                val mac = when {
+                    "_airplay" in type -> Mac.normalize(attr("deviceid"))
+                    "_raop" in type -> Mac.fromRaopName(info.serviceName)
+                    "_workstation" in type -> Mac.findIn(info.serviceName)
+                    else -> null
+                }
+                val cleanName = when {
+                    "_raop" in type -> info.serviceName.substringAfter('@')
+                    "_workstation" in type -> info.serviceName.substringBefore(" [")
+                    else -> info.serviceName
+                }
+                val name = attr("fn") ?: cleanName
                 val model = attr("md") ?: attr("model") ?: attr("am") ?: attr("ty")
                 if (ip.isNotBlank()) resolved++
-                emit(FoundDevice(ip, name, kind, listOfNotNull(model, info.serviceType?.trim('.')), setOf("mDNS / Bonjour")))
+                emit(
+                    FoundDevice(
+                        ip, name, kind, listOfNotNull(model, type.trim('.')), setOf("mDNS / Bonjour"),
+                        mac = mac, macSource = mac?.let { "announced by the device (Bonjour)" },
+                    )
+                )
             }
         }
 
@@ -338,6 +366,7 @@ object NetworkDiscovery {
         val sem = Semaphore(48)
         val done = AtomicInteger()
         val alive = AtomicInteger()
+        val withMac = AtomicInteger()
         coroutineScope {
             for (h in hosts) launch(Dispatchers.IO) {
                 sem.withPermit {
@@ -353,13 +382,17 @@ object NetworkDiscovery {
                     }
                     if (found) {
                         alive.incrementAndGet()
-                        val host = reverseName(ip)
-                        val kind = host?.let { Devices.guessFromHostname(it) } ?: Devices.guessFromPort(openPort)
+                        val nb = netBios(link, ip)
+                        if (nb?.second != null) withMac.incrementAndGet()
+                        val host = reverseName(ip) ?: nb?.first
+                        val kind = host?.let { Devices.guessFromHostname(it) }
+                            ?: if (nb?.first != null) "Windows PC / file server" else Devices.guessFromPort(openPort)
                         emit(
                             FoundDevice(
                                 ip, host ?: ip, kind,
                                 listOfNotNull(openPort?.let { "Answers on ${Ports.name(it)} (port $it)" }),
                                 setOf("Network sweep"), openPort = openPort,
+                                mac = nb?.second, macSource = nb?.second?.let { "announced by the device (NetBIOS)" },
                             )
                         )
                     }
@@ -367,8 +400,22 @@ object NetworkDiscovery {
                 }
             }
         }
-        status("sweep", "Network sweep: ${hosts.size} addresses checked, ${alive.get()} answered")
+        status("sweep", "Network sweep: ${hosts.size} addresses checked, ${alive.get()} answered, ${withMac.get()} shared their MAC (NetBIOS)")
     }
+
+    /** Asks a device for its NetBIOS name and MAC. Only Windows / Samba / NAS devices answer. */
+    private fun netBios(link: LanLink, ip: String): Pair<String?, String?>? = runCatching {
+        DatagramSocket().use { sock ->
+            sock.bindTo(link)
+            sock.soTimeout = 600
+            val q = NetBios.nodeStatusQuery((ip.hashCode() and 0x7FFF) or 1)
+            sock.send(DatagramPacket(q, q.size, InetAddress.getByName(ip), 137))
+            val buf = ByteArray(1024)
+            val p = DatagramPacket(buf, buf.size)
+            sock.receive(p)
+            NetBios.parseNodeStatus(buf.copyOf(p.length))
+        }
+    }.getOrNull()
 
     // ---------- Tools for one device ----------
 

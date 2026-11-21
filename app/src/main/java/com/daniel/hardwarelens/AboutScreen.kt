@@ -108,7 +108,7 @@ fun AboutScreen(onBack: () -> Unit) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("What Android doesn't allow", style = MaterialTheme.typography.titleMedium)
-                    Text("• Hardware (MAC) addresses of other devices on your Wi-Fi are hidden from apps since Android 10.")
+                    Text("• Since Android 10, apps can't read other devices' hardware (MAC) addresses. Hardware Lens shows them when a device announces its own (Windows PCs, NAS boxes, AirPlay and Linux devices often do), plus routers' and Bluetooth addresses. Your router's admin page lists them all.")
                     Text("• Apps get about 4 Wi-Fi scans every 2 minutes.")
                     Text("• Most phones, watches and earbuds use random Bluetooth addresses that change over time.")
                     Text("• Guest, school and office Wi-Fi often stop devices from seeing each other.")

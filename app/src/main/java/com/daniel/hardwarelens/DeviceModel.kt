@@ -10,6 +10,8 @@ data class FoundDevice(
     val openPort: Int? = null,
     val isGateway: Boolean = false,
     val isMe: Boolean = false,
+    val mac: String? = null,
+    val macSource: String? = null,
 ) {
     val key: String get() = ip.ifBlank { "name:$name" }
 }
@@ -43,6 +45,8 @@ object Devices {
         openPort = a.openPort ?: b.openPort,
         isGateway = a.isGateway || b.isGateway,
         isMe = a.isMe || b.isMe,
+        mac = a.mac ?: b.mac,
+        macSource = if (a.mac != null) a.macSource else b.macSource,
     )
 
     /** Sort order for the list: you, your router, game consoles, then everything else by kind. */

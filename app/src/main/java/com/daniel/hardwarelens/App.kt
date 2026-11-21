@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Router
@@ -73,6 +75,7 @@ fun HardwareLensApp() {
         LaunchedEffect(Unit) {
             val missing = requiredPermissions().filterNot { ctx.hasPerm(it) }
             if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
+            OuiDb.load(ctx)
             if (BuildConfig.UPDATE_CHECK && Prefs.checkUpdates.value) Updates.check()
         }
 
@@ -114,6 +117,12 @@ fun HardwareLensApp() {
                                 IconButton(onClick = { page = Page.About }) {
                                     Icon(Icons.Filled.SystemUpdate, "Update available", tint = MaterialTheme.colorScheme.primary)
                                 }
+                            }
+                            IconButton(onClick = { Prefs.setTheme(if (dark) ThemeMode.Light else ThemeMode.Dark) }) {
+                                Icon(
+                                    if (dark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                                    if (dark) "Switch to light mode" else "Switch to dark mode"
+                                )
                             }
                             IconButton(onClick = { page = Page.About }) { Icon(Icons.Filled.Info, "About") }
                             IconButton(onClick = { page = Page.Settings }) { Icon(Icons.Filled.Settings, "Settings") }

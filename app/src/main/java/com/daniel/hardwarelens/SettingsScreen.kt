@@ -32,6 +32,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SectionTitle("Appearance")
+            HintText("Tip: the sun / moon button at the top of the main screen switches light and dark in one tap.")
             ThemeMode.entries.forEach { m ->
                 RadioRow(m.label, Prefs.theme.value == m) { Prefs.setTheme(m) }
             }
